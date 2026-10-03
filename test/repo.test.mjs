@@ -204,7 +204,7 @@ test("nothing needs a newer Node than 18", () => {
 
 test("README follows the family template", () => {
   const headings = [...README.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
-  const wanted = ["What it costs in tokens", "Install", "Use", "Channels", "Settings", "How it works", "What was verified, and how", "Files", "License"];
+  const wanted = ["What it costs in tokens", "Install", "Use", "Channels", "Settings", "How it works", "What was verified, and how", "Files", "Contributing", "Part of the Claude Code toolkit", "License"];
   assert.deepEqual(headings, wanted);
   assert.ok(README.startsWith("# Claude Code notify\n"));
   assert.ok(README.includes("[![test](https://github.com/nrzz/claude-code-notify/actions/workflows/test.yml/badge.svg)](https://github.com/nrzz/claude-code-notify/actions/workflows/test.yml)"));

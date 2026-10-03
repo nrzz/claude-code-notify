@@ -1,6 +1,6 @@
 # Claude Code notify
 
-[![test](https://github.com/nrzz/claude-code-notify/actions/workflows/test.yml/badge.svg)](https://github.com/nrzz/claude-code-notify/actions/workflows/test.yml)
+[![test](https://github.com/nrzz/claude-code-notify/actions/workflows/test.yml/badge.svg)](https://github.com/nrzz/claude-code-notify/actions/workflows/test.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node >= 18](https://img.shields.io/badge/node-%3E%3D18-339933.svg) ![dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen.svg) [![part of the Claude Code toolkit](https://img.shields.io/badge/Claude%20Code-toolkit-d97757.svg)](https://github.com/nrzz/claude-code-toolkit)
 
 Get a ping when Claude Code needs you or finishes, so you can look away while it works: a notification in your terminal, a desktop toast, a push to your phone, a Slack, Discord or Teams message, or any command you choose. The hooks print nothing the model reads, so it costs no tokens.
 
@@ -242,6 +242,23 @@ Not verified:
 Where it writes: `~/.claude/notify.json` (your settings), `~/.claude/notify/` (the installed copy, state, log, outbox) and `~/.claude/settings.json` (three hook entries, after a backup), all under `$CLAUDE_CONFIG_DIR` when that is set.
 
 Related: [claude-code-handover](https://github.com/nrzz/claude-code-handover) keeps your sessions short with a handover file, [claude-code-team-sync](https://github.com/nrzz/claude-code-team-sync) shares sessions and context with your coworkers, and [claude-code-glow](https://github.com/nrzz/claude-code-glow) themes the interface.
+
+## Contributing
+
+Issues and pull requests are welcome: start with [CONTRIBUTING.md](CONTRIBUTING.md) and the [good first issues](https://github.com/nrzz/claude-code-notify/issues?q=is%3Aopen+label%3A%22good+first+issue%22). Questions go to [Discussions](https://github.com/nrzz/claude-code-notify/discussions); security reports go through [SECURITY.md](SECURITY.md).
+
+## Part of the Claude Code toolkit
+
+Small, dependency-free tools that make Claude Code cheaper, safer and easier to share, all in the [Claude Code toolkit](https://github.com/nrzz/claude-code-toolkit):
+
+- [claude-code-handover](https://github.com/nrzz/claude-code-handover): short sessions with a handover file every new session loads by itself
+- [claude-code-team-sync](https://github.com/nrzz/claude-code-team-sync): share sessions, notes and team context with coworkers
+- [claude-code-glow](https://github.com/nrzz/claude-code-glow): themes for the whole interface, a status line and a live HUD
+- [claude-code-guardrails](https://github.com/nrzz/claude-code-guardrails): safety presets that stop risky commands and edits
+- [claude-md-doctor](https://github.com/nrzz/claude-md-doctor): what your CLAUDE.md costs every session, and how to slim it
+- [claude-code-starter-kits](https://github.com/nrzz/claude-code-starter-kits): a lean, safe .claude/ for your stack in one command
+- [claude-cost-guard](https://github.com/nrzz/claude-cost-guard): daily and weekly token budgets with zero-token warnings
+- [claude-session-replay](https://github.com/nrzz/claude-session-replay): search past sessions and export one as an HTML replay
 
 ## License
 
