@@ -1,0 +1,44 @@
+{
+  "name": "claude-code-notify",
+  "version": "1.0.0",
+  "description": "A ping when Claude Code needs you or finishes: terminal notification, desktop toast, phone push (ntfy), Slack, Discord, Teams or your own command. The hooks print nothing the model reads, so it costs 0 tokens.",
+  "type": "module",
+  "bin": {
+    "claude-notify": "bin/claude-notify.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "hooks",
+    ".claude-plugin",
+    "notify.mjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "repository": "github:nrzz/claude-code-notify",
+  "homepage": "https://github.com/nrzz/claude-code-notify#readme",
+  "bugs": "https://github.com/nrzz/claude-code-notify/issues",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "notification",
+    "notify",
+    "hooks",
+    "ntfy",
+    "slack",
+    "discord",
+    "teams",
+    "desktop-notification",
+    "osc9",
+    "productivity"
+  ],
+  "author": "Naresh Prabu",
+  "license": "MIT"
+}

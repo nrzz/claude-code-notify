@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-code-notify",
+  "description": "A ping when Claude Code needs you or finishes: terminal notification, desktop toast, ntfy phone push, Slack, Discord, Teams or your own command. 0 tokens.",
+  "owner": {
+    "name": "Naresh Prabu"
+  },
+  "plugins": [
+    {
+      "name": "notify",
+      "description": "A ping when Claude Code needs you or finishes, so you can look away while it works. Terminal, desktop, phone (ntfy), Slack, Discord, Teams or your own command. The hooks print nothing the model reads: 0 tokens.",
+      "author": { "name": "Naresh Prabu" },
+      "category": "productivity",
+      "source": "./",
+      "homepage": "https://github.com/nrzz/claude-code-notify"
+    }
+  ]
+}

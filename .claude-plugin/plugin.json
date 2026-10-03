@@ -1,0 +1,10 @@
+{
+  "name": "notify",
+  "version": "1.0.0",
+  "description": "A ping when Claude Code needs you or finishes: a terminal notification, desktop toast, ntfy phone push, Slack, Discord, Teams or your own command. The hooks print nothing the model reads, so it costs 0 tokens.",
+  "author": { "name": "Naresh Prabu" },
+  "homepage": "https://github.com/nrzz/claude-code-notify",
+  "repository": "https://github.com/nrzz/claude-code-notify",
+  "license": "MIT",
+  "keywords": ["notification", "notify", "hooks", "ntfy", "slack", "discord", "teams", "desktop-notification", "productivity"]
+}
