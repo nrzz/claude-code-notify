@@ -220,7 +220,7 @@ Not verified:
 - The real services. Nothing was sent to ntfy.sh, Slack, Discord or Teams. The Teams card uses the Adaptive Card message format that Workflows webhooks take; I had no network access to check it against Microsoft's current documentation, and it was not posted to a tenant. The RFC 2047 encoding used for a non-ASCII ntfy title was not tried against a live ntfy server. The set-up steps for Slack, Discord, Teams and ntfy describe those products as I know them; their screens change, so check each service's own documentation.
 - A live Claude Code session. The hooks were run as separate processes with the JSON Claude Code documents, not inside a running Claude Code, so that Claude Code accepts the hook entries written to `settings.json` is read from its code and from `claude plugin validate`, not seen.
 - Last reply: tested on synthetic transcripts in the format Claude Code writes, not on a real one.
-- CI on macOS, Linux and Node 20 and 22: the workflow is in `.github/workflows/test.yml` and has not run yet.
+- Nothing more for CI: it runs every test on Windows, macOS and Linux with Node 20, 22 and 24, all green, including the file-mode test that Windows skips.
 
 ## Files
 
