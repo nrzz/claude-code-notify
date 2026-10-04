@@ -36,8 +36,10 @@ As a plugin instead:
 
 ```
 /plugin marketplace add nrzz/claude-code-notify
-/plugin install notify@claude-code-notify
+/plugin install nudge@claude-code-notify
 ```
+
+The plugin was called `notify` until 1.0.1. If you installed it under that name, `/plugin uninstall notify@claude-code-notify` and install `nudge`; your settings stay as they are.
 
 Use one route, not both: `init` refuses while the plugin is switched on, because every ping would arrive twice. Both routes read the same settings file, so you configure either one with `npx -y github:nrzz/claude-code-notify set ...`. To get a permanent `claude-notify` command: `npm i -g github:nrzz/claude-code-notify`.
 
@@ -200,6 +202,10 @@ A hook never fails a session. Any error ends with exit code 0 and a log line. Ex
 What stays on your machine and what leaves it: nothing leaves except to the channels you set up, and what goes is the title, the project folder's name, the duration or Claude Code's message, and (only if you turned on both options) the start of Claude's last reply. There is no telemetry and no other network call.
 
 For tests and debugging: `CLAUDE_NOTIFY_NOW` (epoch milliseconds or an ISO date) replaces the clock, `CLAUDE_NOTIFY_INLINE=1` sends from inside the hook instead of the worker, `CLAUDE_NOTIFY_TIMEOUT_MS` changes the 5-second send timeout, and `CLAUDE_NOTIFY_DEBUG=1` adds a stack trace to a command that failed.
+
+### Privacy
+
+claude-code-notify runs on your machine and has no telemetry and no account. A notification holds a title (`Claude Code` unless you change it) and one line: `Finished in <project> after <time>`, or the project's name and the message Claude Code shows when it needs you (for example that it wants permission to use a tool). Claude's last reply is added only if you turn on `includeLastMessage`, and it reaches the remote channels only if you also turn on `includeLastMessageRemote`. Terminal and desktop notifications and your own command stay on your machine. Only the remote channels you set up receive notifications: your ntfy server (`https://ntfy.sh` unless you set `ntfy.url`) on the topic you chose, and your Slack, Discord or Teams webhooks; what those services keep is up to them. The log records decisions and channel names, never message text, webhook URLs or tokens, and settings, webhook URLs included, stay in `notify.json` in your Claude config folder, written with mode 600 where the system supports it. Questions go to [the issues](https://github.com/nrzz/claude-code-notify/issues).
 
 ## What was verified, and how
 

@@ -30,7 +30,7 @@ const rel = (f) => path.relative(ROOT, f).split(path.sep).join("/");
 
 test("package.json has the family's fields", () => {
   assert.equal(pkg.name, "claude-code-notify");
-  assert.equal(pkg.version, "1.0.0");
+  assert.equal(pkg.version, "1.0.1");
   assert.equal(pkg.type, "module");
   assert.deepEqual(pkg.bin, { "claude-notify": "bin/claude-notify.mjs" });
   assert.deepEqual(pkg.engines, { node: ">=18" });
@@ -72,7 +72,8 @@ test("the shebang files start with a node shebang", () => {
 
 test("plugin.json", () => {
   const p = json(".claude-plugin", "plugin.json");
-  assert.equal(p.name, "notify");
+  assert.equal(p.name, "nudge");
+  assert.equal(p.displayName, "Nudge");
   assert.deepEqual(p.author, { name: "Naresh Prabu" });
   assert.equal(p.homepage, "https://github.com/nrzz/claude-code-notify");
   assert.equal(p.repository, "https://github.com/nrzz/claude-code-notify");
@@ -81,14 +82,14 @@ test("plugin.json", () => {
   assert.ok(p.description.includes("0 tokens"));
 });
 
-test("marketplace.json lists the notify plugin from the repository root", () => {
+test("marketplace.json lists the plugin, nudge, from the repository root", () => {
   const m = json(".claude-plugin", "marketplace.json");
   assert.equal(m.$schema, "https://anthropic.com/claude-code/marketplace.schema.json");
   assert.equal(m.name, "claude-code-notify");
   assert.deepEqual(m.owner, { name: "Naresh Prabu" });
   assert.equal(m.plugins.length, 1);
   assert.deepEqual(m.plugins[0], {
-    name: "notify",
+    name: "nudge",
     description: m.plugins[0].description,
     author: { name: "Naresh Prabu" },
     category: "productivity",
@@ -223,7 +224,7 @@ test("README token table says 0, and its install section has both routes", () =>
   for (const row of rows) assert.equal(row.split("|")[2].trim(), "0", row);
   assert.ok(README.includes("npx -y github:nrzz/claude-code-notify init"));
   assert.ok(README.includes("/plugin marketplace add nrzz/claude-code-notify"));
-  assert.ok(README.includes("/plugin install notify@claude-code-notify"));
+  assert.ok(README.includes("/plugin install nudge@claude-code-notify"));
 });
 
 test("README has a subsection for every channel, each with set-up steps", () => {

@@ -1,10 +1,15 @@
 {
-  "name": "notify",
-  "version": "1.0.0",
+  "name": "nudge",
+  "displayName": "Nudge",
+  "version": "1.0.1",
   "description": "A ping when Claude Code needs you or finishes: a terminal notification, desktop toast, ntfy phone push, Slack, Discord, Teams or your own command. The hooks print nothing the model reads, so it costs 0 tokens.",
   "author": { "name": "Naresh Prabu" },
   "homepage": "https://github.com/nrzz/claude-code-notify",
   "repository": "https://github.com/nrzz/claude-code-notify",
+  "documentationUrl": "https://github.com/nrzz/claude-code-notify#readme",
+  "supportUrl": "https://github.com/nrzz/claude-code-notify/issues",
+  "privacyPolicyUrl": "https://github.com/nrzz/claude-code-notify#privacy",
+  "termsOfServiceUrl": "https://github.com/nrzz/claude-code-notify/blob/main/LICENSE",
   "license": "MIT",
   "keywords": ["notification", "notify", "hooks", "ntfy", "slack", "discord", "teams", "desktop-notification", "productivity"]
 }

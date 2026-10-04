@@ -275,12 +275,12 @@ test("init refuses an unknown scope and the CLI reports it", () => {
 test("init stops when the notify plugin is switched on, since every ping would arrive twice", () => {
   const box = sandbox();
   try {
-    const original = { enabledPlugins: { "notify@claude-code-notify": true, "other@market": true } };
+    const original = { enabledPlugins: { "nudge@claude-code-notify": true, "other@market": true } };
     box.writeSettings(original);
     const before = fs.readFileSync(box.settingsFile, "utf8");
     const { code, io } = runInstall(box);
     assert.equal(code, 1);
-    assert.match(io.text(), /notify plugin is switched on/);
+    assert.match(io.text(), /plugin \(nudge\) is switched on/);
     assert.equal(fs.readFileSync(box.settingsFile, "utf8"), before);
     assert.ok(!fs.existsSync(appScript(box)), "nothing was copied");
   } finally {
@@ -291,9 +291,9 @@ test("init stops when the notify plugin is switched on, since every ping would a
 test("init --force installs anyway, and a plugin that is switched off is no obstacle", () => {
   const box = sandbox();
   try {
-    box.writeSettings({ enabledPlugins: { "notify@claude-code-notify": false } });
+    box.writeSettings({ enabledPlugins: { "nudge@claude-code-notify": false } });
     assert.equal(runInstall(box).code, 0);
-    box.writeSettings({ enabledPlugins: { "notify@claude-code-notify": true } });
+    box.writeSettings({ enabledPlugins: { "nudge@claude-code-notify": true } });
     assert.equal(runInstall(box).code, 1);
     assert.equal(runInstall(box, { force: true }).code, 0);
     assert.equal(box.readSettings().hooks.Stop.length, 1);
@@ -303,9 +303,14 @@ test("init --force installs anyway, and a plugin that is switched off is no obst
 });
 
 test("pluginEnabled", () => {
+  assert.equal(pluginEnabled({ enabledPlugins: { "nudge@claude-code-notify": true } }), true);
+  assert.equal(pluginEnabled({ enabledPlugins: { "nudge@claude-code-toolkit": true } }), true);
+  assert.equal(pluginEnabled({ enabledPlugins: { "nudge@elsewhere": true } }), true);
+  assert.equal(pluginEnabled({ enabledPlugins: { "nudge@claude-code-notify": false } }), false);
+  // The name until 1.0.1 still counts from this tool's own marketplaces, and only from them.
   assert.equal(pluginEnabled({ enabledPlugins: { "notify@claude-code-notify": true } }), true);
-  assert.equal(pluginEnabled({ enabledPlugins: { "notify@elsewhere": true } }), true);
-  assert.equal(pluginEnabled({ enabledPlugins: { "notify@claude-code-notify": false } }), false);
+  assert.equal(pluginEnabled({ enabledPlugins: { "notify@claude-code-toolkit": true } }), true);
+  assert.equal(pluginEnabled({ enabledPlugins: { "notify@elsewhere": true } }), false);
   assert.equal(pluginEnabled({ enabledPlugins: { "glow@claude-code-glow": true } }), false);
   assert.equal(pluginEnabled({ enabledPlugins: { "notifier@x": true } }), false);
   assert.equal(pluginEnabled({}), false);
@@ -426,7 +431,7 @@ test("init --scope project copies into .claude/notify and registers ${CLAUDE_PRO
     // the vendored copy runs, and is also a command line
     const r = spawnSync(process.execPath, [path.join(box.proj, ".claude", "notify", "notify.mjs"), "--version"], { encoding: "utf8", env: box.env });
     assert.equal(r.status, 0);
-    assert.equal(r.stdout.trim(), "1.0.0");
+    assert.equal(r.stdout.trim(), "1.0.1");
   } finally {
     box.cleanup();
   }

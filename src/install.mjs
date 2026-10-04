@@ -107,9 +107,12 @@ export function hooksIn(settings) {
   return { events, scripts: [...scripts] };
 }
 
-/** True when the notify plugin is switched on in these settings. */
+/**
+ * True when this tool's plugin is switched on in these settings: nudge from any marketplace, or its name until
+ * 1.0.1, notify, from this tool's own marketplaces (a plugin called notify from elsewhere is somebody else's).
+ */
 export function pluginEnabled(settings) {
-  return isObj(settings) && isObj(settings.enabledPlugins) && Object.entries(settings.enabledPlugins).some(([k, v]) => /^notify@/.test(k) && v);
+  return isObj(settings) && isObj(settings.enabledPlugins) && Object.entries(settings.enabledPlugins).some(([k, v]) => v && (/^nudge@/.test(k) || /^notify@(claude-code-notify|claude-code-toolkit)$/.test(k)));
 }
 
 /**
@@ -176,7 +179,7 @@ export function install({ scope = "user", cwd = process.cwd(), env = process.env
   const userSettings = L.settingsFile === userSettingsFile ? settings : readSettings(userSettingsFile);
   const plugin = [[userSettingsFile, userSettings], [L.settingsFile, settings]].find(([, s]) => s.status === "ok" && pluginEnabled(s.data));
   if (plugin && !force) {
-    io.error(`  The notify plugin is switched on in ${plugin[0]}. Its hooks would run next to these and every ping would arrive twice.`);
+    io.error(`  The plugin (nudge) is switched on in ${plugin[0]}. Its hooks would run next to these and every ping would arrive twice.`);
     io.error("  Use one of the two: keep the plugin, or disable it (/plugin) and run init again. To install anyway: claude-notify init --force");
     return 1;
   }

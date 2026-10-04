@@ -7,7 +7,7 @@
   },
   "plugins": [
     {
-      "name": "notify",
+      "name": "nudge",
       "description": "A ping when Claude Code needs you or finishes, so you can look away while it works. Terminal, desktop, phone (ntfy), Slack, Discord, Teams or your own command. The hooks print nothing the model reads: 0 tokens.",
       "author": { "name": "Naresh Prabu" },
       "category": "productivity",

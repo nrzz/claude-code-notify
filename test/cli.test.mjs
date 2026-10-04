@@ -343,10 +343,10 @@ test("status shows what is installed, and flags the plugin and init together", a
     assert.match(r.stdout, /this project\s+not installed/);
     assert.ok(!r.stdout.includes("No hooks are installed"));
     const settings = box.readSettings();
-    settings.enabledPlugins = { "notify@claude-code-notify": true };
+    settings.enabledPlugins = { "nudge@claude-code-notify": true };
     box.writeSettings(settings);
     r = box.cli(["status"]);
-    assert.match(r.stdout, /plugin\s+notify plugin is switched on/);
+    assert.match(r.stdout, /plugin\s+nudge plugin is switched on/);
     assert.match(r.stdout, /both on: pings are sent twice/);
   });
 });

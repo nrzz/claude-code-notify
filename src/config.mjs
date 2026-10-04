@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { parseQuiet } from "./decide.mjs";
 import { readText, writeFileAtomic } from "./fsutil.mjs";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.0.1";
 export const REPO_URL = "https://github.com/nrzz/claude-code-notify";
 /** The folder this code runs from: the repo, an installed copy, or the plugin folder. */
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");

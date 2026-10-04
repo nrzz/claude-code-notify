@@ -225,10 +225,10 @@ function cmdStatus({ cwd, env, io }) {
   row("user", describe(userSettings));
   row("this project", describe(projSettings));
   const pluginOn = [userSettings, projSettings].some((s) => s.status === "ok" && pluginEnabled(s.data));
-  row("plugin", pluginOn ? "notify plugin is switched on" : "not switched on");
+  row("plugin", pluginOn ? "nudge plugin is switched on" : "not switched on");
   const installed = hooksIn(userSettings.data).events.length + hooksIn(projSettings.data).events.length;
   if (pluginOn && installed) io.log("  ! The plugin and init-installed hooks are both on: pings are sent twice, or dropped by the rate limit. Keep one.");
-  if (!pluginOn && !installed) io.log("  ! No hooks are installed. Run: claude-notify init   (or install the plugin: /plugin install notify@claude-code-notify)");
+  if (!pluginOn && !installed) io.log("  ! No hooks are installed. Run: claude-notify init   (or install the plugin: /plugin install nudge@claude-code-notify)");
   if (fs.existsSync(appDir(env))) row("installed copy", appDir(env));
 
   io.log("");
