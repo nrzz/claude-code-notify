@@ -25,11 +25,14 @@ process.env.CLAUDE_CONFIG_DIR = path.join(GUARD, "cfg");
 process.env.HOME = path.join(GUARD, "home");
 process.env.USERPROFILE = path.join(GUARD, "home");
 for (const k of Object.keys(process.env)) if (k.startsWith("CLAUDE_NOTIFY_")) delete process.env[k];
-process.on("exit", () => removeDir(GUARD));
+// Every sandbox is removed when the test process exits too, so a test that does not call cleanup() leaves nothing behind.
+const made = [];
+process.on("exit", () => { for (const dir of [GUARD, ...made]) removeDir(dir); });
 
 /** A throwaway world: a config folder, a home folder, a project folder (with a .git folder) and an env that points at them. */
 export function sandbox() {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(tmpBase(), "cn-")));
+  made.push(root);
   const cfg = path.join(root, "c");
   const home = path.join(root, "h");
   const proj = path.join(root, "myproj");
