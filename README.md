@@ -105,7 +105,7 @@ A native notification, with no dependencies, started in the background so the ho
 | --- | --- | --- |
 | Windows | `powershell.exe -NoProfile -NonInteractive -Command ...` showing a WinRT toast (`ToastText02`) | It is sent under Windows PowerShell's app id (Windows only shows toasts for a registered app), so Windows may label it "Windows PowerShell". Focus Assist and Do Not Disturb hide the pop-up |
 | macOS | `osascript -e 'display notification ...'` | macOS attributes it to Script Editor; allow notifications for that app if nothing appears |
-| Linux | `notify-send` | Needs libnotify (`libnotify-bin` on Debian and Ubuntu) and a notification daemon |
+| Linux | `notify-send`, started by a fixed `sh -c 'exec notify-send ...'` that reads the text from the environment | Needs libnotify (`libnotify-bin` on Debian and Ubuntu) and a notification daemon |
 
 The title and text reach these commands only through the environment variables `CN_TITLE` and `CN_BODY`. The scripts are fixed, so nothing Claude Code or a project says can become code.
 
@@ -153,11 +153,11 @@ claude-notify set command '["python", "-u", "/home/me/ping.py", "--loud"]'
 claude-notify set command afplay /System/Library/Sounds/Glass.aiff
 ```
 
-The command is run directly, never through a shell, with the message in its environment: `CLAUDE_NOTIFY_TITLE`, `CLAUDE_NOTIFY_BODY`, `CLAUDE_NOTIFY_PROJECT`, `CLAUDE_NOTIFY_EVENT` (`Stop` or `Notification`) and `CLAUDE_NOTIFY_KIND` (`finished` or `attention`). Read them in your script; do not paste them into a shell command. It is stopped after 5 seconds. On Windows give it an `.exe` (or `["cmd", "/c", "script.cmd"]`), because a `.cmd` file cannot be started directly.
+The command is run directly, never through a shell, with the message in its environment: `CLAUDE_NOTIFY_TITLE`, `CLAUDE_NOTIFY_BODY`, `CLAUDE_NOTIFY_PROJECT`, `CLAUDE_NOTIFY_EVENT` (`Stop`, `Notification`, or `Test` for `claude-notify test`) and `CLAUDE_NOTIFY_KIND` (`finished` or `attention`). Read them in your script; do not paste them into a shell command. It is stopped after 5 seconds. On Windows give it an `.exe` (or `["cmd", "/c", "script.cmd"]`), because a `.cmd` file cannot be started directly.
 
 ## Settings
 
-Settings live in `~/.claude/notify.json` (in `$CLAUDE_CONFIG_DIR` when that is set), written with mode 0600 where the system has file modes. Change them with `claude-notify set <key> <value>`; the word `default` removes a setting. `claude-notify status` shows everything, with secrets masked. A value that does not check out is ignored in favour of its default, so a typo cannot break or silence a hook; `status` lists what it ignored.
+Settings live in `~/.claude/notify.json` (in `$CLAUDE_CONFIG_DIR` when that is set), written with mode 0600 where the system has file modes. Change them with `claude-notify set <key> <value>`; the word `default` removes a setting. `claude-notify status` shows everything, with secrets masked. A value that does not check out is ignored in favour of its default, so a typo cannot break or silence a hook. `status` lists the ignored values it can detect (the webhook and ntfy URLs, `ntfy.topic`, `terminal`, `quiet`, `command` and `minTurnSeconds`); any other invalid value falls back to its default without a word.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
@@ -166,7 +166,7 @@ Settings live in `~/.claude/notify.json` (in `$CLAUDE_CONFIG_DIR` when that is s
 | `ntfy.topic` | none | Turns ntfy on. 1 to 64 letters, digits, `-` or `_`, or `auto` |
 | `ntfy.url` | `https://ntfy.sh` | A self-hosted ntfy server |
 | `ntfy.token` | none | Access token for a protected topic |
-| `ntfy.priority` | by event | `min`, `low`, `default`, `high`, `max` or 1 to 5 |
+| `ntfy.priority` | by event | `min`, `low`, `default`, `high`, `max`, `urgent` or 1 to 5 |
 | `slack.url`, `discord.url`, `teams.url` | none | Webhook URLs. They must be `https://` (`http://` works for this machine) |
 | `teams.format` | `card` | `card` or `text` |
 | `command` | none | A program and its arguments |
@@ -207,7 +207,7 @@ Checked on 2026-10-04 on Windows 11 with Node 24.19.0 against Claude Code 2.1.28
 
 - **342 automated tests** (`npm test`): 341 pass and 1 is skipped on Windows (it checks file modes, so it runs on Linux and macOS). Seven full runs of the final code, three of them at the same time, had no failure. They cover the whole decision table (every Notification type, Stop below and above the threshold, a missing start time, `stop_hook_active`, every automated source, quiet hours inside a day and across midnight, mute, the rate limit at its exact edges), the message text and its privacy defaults, the escape sequences byte for byte, the request each web channel builds, real sends of every web channel to a local HTTP server (headers and bodies checked, plus error status, redirect, refused connection and silence), the desktop command lines per platform, the custom command's environment with real child processes, the hooks end to end as child processes with JSON on stdin, `init` and `uninstall` round trips in throwaway folders (backup, dedupe, other settings kept, invalid JSON left alone, both scopes), and the command line.
 - **The escape-sequence rule comes from Claude Code itself.** I read the validator for `terminalSequence` out of the Claude Code 2.1.286 binary (reading the file, not running it): at most 4096 bytes, OSC 0, 1, 2, 9, 99 and 777 or BEL, ended by BEL or ESC backslash, control characters stripped, and for OSC 9 no body that starts, after blanks and an optional sign, with a digit of any script. The tests carry an independent copy of that rule, check that it rejects what Claude Code rejects, and check that every sequence this tool can build passes it, including for hostile and 4-byte-per-character text.
-- **Speed.** A hook takes 55 to 60 ms on this machine against 38 ms for an empty `node -e 0`, and the hook's output pipe closes at once even while the background worker waits on a server that never answers (that is a test).
+- **Speed.** A hook takes about 65 to 80 ms on this machine against about 40 to 55 ms for an empty `node -e 0` (measured again on 2026-10-04), and the hook's output pipe closes at once even while the background worker waits on a server that never answers (that is a test).
 - **Concurrency.** Six hooks of one session started at the same moment send one ping. With the lock removed that test fails, so it does test something.
 - **The plugin and marketplace** pass `claude plugin validate`, run with a throwaway config folder: `.claude-plugin/plugin.json`, and `.` for the marketplace. In its plugin-directory form (a copy of the plugin without `marketplace.json`) the same command also checks `hooks/hooks.json`; it flags a string where `args` should be a list and an unknown event name, and passes this file without a warning.
 - **A real Windows toast** was shown once, by hand, through the real hook and worker. The PowerShell command exited cleanly, Windows reported toasts enabled for the app, and the app's notification history held one entry with the expected title and text. After that, one change (PowerShell is now started by its full system path, see How it works) was checked without a second toast: the resolved path runs, and the exact toast script still parses.
@@ -220,7 +220,7 @@ Not verified:
 - The real services. Nothing was sent to ntfy.sh, Slack, Discord or Teams. The Teams card uses the Adaptive Card message format that Workflows webhooks take; I had no network access to check it against Microsoft's current documentation, and it was not posted to a tenant. The RFC 2047 encoding used for a non-ASCII ntfy title was not tried against a live ntfy server. The set-up steps for Slack, Discord, Teams and ntfy describe those products as I know them; their screens change, so check each service's own documentation.
 - A live Claude Code session. The hooks were run as separate processes with the JSON Claude Code documents, not inside a running Claude Code, so that Claude Code accepts the hook entries written to `settings.json` is read from its code and from `claude plugin validate`, not seen.
 - Last reply: tested on synthetic transcripts in the format Claude Code writes, not on a real one.
-- Nothing more for CI: it runs every test on Windows, macOS and Linux with Node 20, 22 and 24, all green, including the file-mode test that Windows skips.
+- Nothing more for CI: it runs every test on Windows, macOS and Linux with Node 20, 22 and 24, and on Linux with Node 18, all green, including the file-mode test that Windows skips. The [toolkit's end-to-end test](https://github.com/nrzz/claude-code-toolkit#tested-together) also installs it from GitHub on all three systems and runs its hooks, and the plugin installs from GitHub with `/plugin marketplace add nrzz/claude-code-notify`.
 
 ## Files
 

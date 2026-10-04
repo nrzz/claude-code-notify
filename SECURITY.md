@@ -10,4 +10,4 @@ Please do not report a vulnerability in a public issue. Use GitHub's private rep
 
 ## What this tool can and cannot protect
 
-Webhook URLs and tokens are secrets: they live only in your user config, written with mode 600 where the system supports it, and are shown masked. Message text reaches desktop commands through environment variables, never through a shell.
+Webhook URLs and tokens are secrets: they live only in your user config, written with mode 600 where the system supports it, and are shown masked. Message text reaches desktop commands only through environment variables: the fixed `sh -c`, PowerShell or osascript script that reads them never contains message text, and your own command runs with no shell at all.
