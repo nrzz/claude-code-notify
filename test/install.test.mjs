@@ -272,7 +272,7 @@ test("init refuses an unknown scope and the CLI reports it", () => {
 
 // --- the plugin and init together -------------------------------------------------------------------
 
-test("init stops when the notify plugin is switched on, since every ping would arrive twice", () => {
+test("init stops when the nudge plugin is switched on, since every ping would arrive twice", () => {
   const box = sandbox();
   try {
     const original = { enabledPlugins: { "nudge@claude-code-notify": true, "other@market": true } };
