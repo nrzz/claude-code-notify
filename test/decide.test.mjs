@@ -141,6 +141,7 @@ test("UserPromptSubmit and SessionEnd never send", () => {
 const everything = () => cfg({
   desktop: true,
   ntfy: { topic: "my-topic" },
+  pushover: { token: "app-token", user: "user-key" },
   slack: { url: "https://example.test/s" },
   discord: { url: "https://example.test/d" },
   teams: { url: "https://example.test/t" },

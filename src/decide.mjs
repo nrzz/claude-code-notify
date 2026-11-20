@@ -3,10 +3,10 @@
 // Everything that touches the outside world lives elsewhere, so every row of the table is testable.
 
 /** Channels in the order they are tried. `terminal` goes through Claude Code itself. */
-export const CHANNELS = ["terminal", "desktop", "ntfy", "slack", "discord", "teams", "command"];
+export const CHANNELS = ["terminal", "desktop", "ntfy", "pushover", "slack", "discord", "teams", "command"];
 
 /** Channels that leave the machine. Claude's last reply goes to these only when asked for twice. */
-export const REMOTE_CHANNELS = ["ntfy", "slack", "discord", "teams"];
+export const REMOTE_CHANNELS = ["ntfy", "pushover", "slack", "discord", "teams"];
 
 /** Notification types that mean "Claude needs you". Every elicitation* type is added except elicitation_complete. */
 export const NEEDS_YOU_TYPES = ["permission_prompt", "idle_prompt", "agent_needs_input", "worker_permission_prompt"];
@@ -53,6 +53,7 @@ export function enabledChannels(cfg) {
   if (cfg.terminal !== "off") on.push("terminal");
   if (cfg.desktop) on.push("desktop");
   if (cfg.ntfy.topic) on.push("ntfy");
+  if (cfg.pushover.token && cfg.pushover.user) on.push("pushover");
   if (cfg.slack.url) on.push("slack");
   if (cfg.discord.url) on.push("discord");
   if (cfg.teams.url) on.push("teams");

@@ -2,7 +2,7 @@
 
 [![test](https://github.com/nrzz/claude-code-notify/actions/workflows/test.yml/badge.svg)](https://github.com/nrzz/claude-code-notify/actions/workflows/test.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node >= 18](https://img.shields.io/badge/node-%3E%3D18-339933.svg) ![dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen.svg) [![part of the Claude Code toolkit](https://img.shields.io/badge/Claude%20Code-toolkit-d97757.svg)](https://github.com/nrzz/claude-code-toolkit)
 
-Get a ping when Claude Code needs you or finishes, so you can look away while it works: a notification in your terminal, a desktop toast, a push to your phone, a Slack, Discord or Teams message, or any command you choose. The hooks print nothing the model reads, so it costs no tokens.
+Get a ping when Claude Code needs you or finishes, so you can look away while it works: a notification in your terminal, a desktop toast, a push to your phone through ntfy or Pushover, a Slack, Discord or Teams message, or any command you choose. The hooks print nothing the model reads, so it costs no tokens.
 
 ## What it costs in tokens
 
@@ -77,6 +77,18 @@ When a ping does not come, `claude-notify status` ends with the latest decisions
 
 ## Channels
 
+| Channel | What it does | Setup |
+| --- | --- | --- |
+| Terminal | Terminal escape-sequence notification | On by default |
+| Desktop | Native desktop toast | `claude-notify set desktop on` |
+| ntfy | Phone push without an account | `claude-notify set ntfy.topic auto` |
+| Pushover | Phone and desktop push | Set `pushover.token` and `pushover.user` |
+| Slack | Incoming webhook message | Set `slack.url` |
+| Discord | Webhook message | Set `discord.url` |
+| Microsoft Teams | Workflow webhook card | Set `teams.url` |
+| Your own command | Run a program with notification details in its environment | Set `command` |
+
+
 ### Terminal (on by default)
 
 The hook prints `{"terminalSequence": "..."}` and Claude Code writes that escape sequence to your terminal. It needs no dependencies and no setup. Choose the form with `claude-notify set terminal <mode>`:
@@ -123,6 +135,22 @@ On the public server anyone who knows a topic can read it, so keep it long and p
 
 The request is a POST to `<server>/<topic>` with the message as the body and the headers `Title`, `Priority` (`high` when Claude needs you, `default` when finished, or your `ntfy.priority`) and `Tags`.
 
+### Phone: Pushover
+
+[Pushover](https://pushover.net) sends push notifications to its mobile and desktop apps.
+
+1. Create an application in your Pushover account and copy its API token.
+2. Find your user key in your Pushover dashboard.
+3. Configure both credentials and send a test:
+
+```bash
+claude-notify set pushover.token <app-token>
+claude-notify set pushover.user <user-key>
+claude-notify test --channel pushover
+```
+
+Credentials are stored only in your user settings and masked by `claude-notify status`. Pushover receives a form-encoded POST to its Messages API. Finished notifications use normal priority; notifications that need your attention use high priority. For local testing, `pushover.url` can point to a local HTTP test server; normally leave it at `https://api.pushover.net/1/messages.json`.
+
 ### Slack
 
 1. Create an incoming webhook: api.slack.com/messaging/webhooks, make an app, switch on Incoming Webhooks, "Add New Webhook to Workspace", pick the channel.
@@ -159,7 +187,7 @@ The command is run directly, never through a shell, with the message in its envi
 
 ## Settings
 
-Settings live in `~/.claude/notify.json` (in `$CLAUDE_CONFIG_DIR` when that is set), written with mode 0600 where the system has file modes. Change them with `claude-notify set <key> <value>`; the word `default` removes a setting. `claude-notify status` shows everything, with secrets masked. A value that does not check out is ignored in favour of its default, so a typo cannot break or silence a hook. `status` lists the ignored values it can detect (the webhook and ntfy URLs, `ntfy.topic`, `terminal`, `quiet`, `command` and `minTurnSeconds`); any other invalid value falls back to its default without a word.
+Settings live in `~/.claude/notify.json` (in `$CLAUDE_CONFIG_DIR` when that is set), written with mode 0600 where the system has file modes. Change them with `claude-notify set <key> <value>`; the word `default` removes a setting. `claude-notify status` shows everything, with secrets masked. A value that does not check out is ignored in favour of its default, so a typo cannot break or silence a hook. `status` lists the ignored values it can detect (the webhook, ntfy and Pushover URLs, `ntfy.topic`, `terminal`, `quiet`, `command` and `minTurnSeconds`); any other invalid value falls back to its default without a word.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
@@ -168,6 +196,8 @@ Settings live in `~/.claude/notify.json` (in `$CLAUDE_CONFIG_DIR` when that is s
 | `ntfy.topic` | none | Turns ntfy on. 1 to 64 letters, digits, `-` or `_`, or `auto` |
 | `ntfy.url` | `https://ntfy.sh` | A self-hosted ntfy server |
 | `ntfy.token` | none | Access token for a protected topic |
+| `pushover.token`, `pushover.user` | none | Pushover application token and user key; both required |
+| `pushover.url` | `https://api.pushover.net/1/messages.json` | Pushover Messages API endpoint (normally leave unchanged) |
 | `ntfy.priority` | by event | `min`, `low`, `default`, `high`, `max`, `urgent` or 1 to 5 |
 | `slack.url`, `discord.url`, `teams.url` | none | Webhook URLs. They must be `https://` (`http://` works for this machine) |
 | `teams.format` | `card` | `card` or `text` |
@@ -177,12 +207,12 @@ Settings live in `~/.claude/notify.json` (in `$CLAUDE_CONFIG_DIR` when that is s
 | `quiet` | `off` | `HH:MM-HH:MM`, local time, may cross midnight. Terminal channel only inside it |
 | `rateLimitSeconds` | `20` | One push per channel per session in this many seconds. `0` turns it off |
 | `includeLastMessage` | `off` | Add the first 120 characters of Claude's last reply, in the terminal, desktop and command channels |
-| `includeLastMessageRemote` | `off` | Together with `includeLastMessage`, add it to ntfy, Slack, Discord and Teams as well |
+| `includeLastMessageRemote` | `off` | Together with `includeLastMessage`, add it to ntfy, Pushover, Slack, Discord and Teams as well |
 | `types.<name>` | | `on` or `off` for one Notification type, overriding the table above |
 | `title` | `Claude Code` | The notification title |
 | `enabled` | `on` | `off` silences everything |
 
-The webhook URLs, the ntfy token and the topic exist only in your own settings file. A project can carry `.claude/notify.json` to share a few preferences with its team, and only these four are read from it: `name` (what to call the project), `minTurnSeconds`, `quiet` and `notifyAutomated`. Anything else in a project file is ignored, so a repository you clone can never add a channel, a URL or a command. `claude-notify set --project <key> <value>` edits it.
+The webhook URLs, ntfy token and topic, and Pushover application token and user key exist only in your own settings file. A project can carry `.claude/notify.json` to share a few preferences with its team, and only these four are read from it: `name` (what to call the project), `minTurnSeconds`, `quiet` and `notifyAutomated`. Anything else in a project file is ignored, so a repository you clone can never add a channel, a URL or a command. `claude-notify set --project <key> <value>` edits it.
 
 Last reply: `includeLastMessage` reads the tail of the session transcript (`transcript_path`) on your machine. It is best effort: Claude Code may not have written the final line when the Stop hook runs.
 
@@ -205,25 +235,25 @@ For tests and debugging: `CLAUDE_NOTIFY_NOW` (epoch milliseconds or an ISO date)
 
 ### Privacy
 
-claude-code-notify runs on your machine and has no telemetry and no account. A notification holds a title (`Claude Code` unless you change it) and one line: `Finished in <project> after <time>`, or the project's name and the message Claude Code shows when it needs you (for example that it wants permission to use a tool). Claude's last reply is added only if you turn on `includeLastMessage`, and it reaches the remote channels only if you also turn on `includeLastMessageRemote`. Terminal and desktop notifications and your own command stay on your machine. Only the remote channels you set up receive notifications: your ntfy server (`https://ntfy.sh` unless you set `ntfy.url`) on the topic you chose, and your Slack, Discord or Teams webhooks; what those services keep is up to them. The log records decisions and channel names, never message text, webhook URLs or tokens, and settings, webhook URLs included, stay in `notify.json` in your Claude config folder, written with mode 600 where the system supports it. Questions go to [the issues](https://github.com/nrzz/claude-code-notify/issues).
+claude-code-notify runs on your machine and has no telemetry and no account. A notification holds a title (`Claude Code` unless you change it) and one line: `Finished in <project> after <time>`, or the project's name and the message Claude Code shows when it needs you (for example that it wants permission to use a tool). Claude's last reply is added only if you turn on `includeLastMessage`, and it reaches the remote channels only if you also turn on `includeLastMessageRemote`. Terminal and desktop notifications and your own command stay on your machine. Only the remote channels you set up receive notifications: your ntfy server (`https://ntfy.sh` unless you set `ntfy.url`) on the topic you chose, and your Pushover account and your Slack, Discord or Teams webhooks; what those services keep is up to them. The log records decisions and channel names, never message text, webhook URLs or tokens, and settings, webhook URLs included, stay in `notify.json` in your Claude config folder, written with mode 600 where the system supports it. Questions go to [the issues](https://github.com/nrzz/claude-code-notify/issues).
 
 ## What was verified, and how
 
 Checked on 2026-10-04 on Windows 11 with Node 24.19.0 against Claude Code 2.1.286.
 
-- **342 automated tests** (`npm test`): 341 pass and 1 is skipped on Windows (it checks file modes, so it runs on Linux and macOS). Seven full runs of the final code, three of them at the same time, had no failure. They cover the whole decision table (every Notification type, Stop below and above the threshold, a missing start time, `stop_hook_active`, every automated source, quiet hours inside a day and across midnight, mute, the rate limit at its exact edges), the message text and its privacy defaults, the escape sequences byte for byte, the request each web channel builds, real sends of every web channel to a local HTTP server (headers and bodies checked, plus error status, redirect, refused connection and silence), the desktop command lines per platform, the custom command's environment with real child processes, the hooks end to end as child processes with JSON on stdin, `init` and `uninstall` round trips in throwaway folders (backup, dedupe, other settings kept, invalid JSON left alone, both scopes), and the command line.
+- **347 automated tests** (`npm test`): the suite includes the 342-test upstream baseline and five Pushover tests added here. The Pushover tests cover request encoding, event priority, credential redaction and delivery to a local HTTP server. Run `npm test` to execute the suite; no live Pushover account was used for this change.
 - **The escape-sequence rule comes from Claude Code itself.** I read the validator for `terminalSequence` out of the Claude Code 2.1.286 binary (reading the file, not running it): at most 4096 bytes, OSC 0, 1, 2, 9, 99 and 777 or BEL, ended by BEL or ESC backslash, control characters stripped, and for OSC 9 no body that starts, after blanks and an optional sign, with a digit of any script. The tests carry an independent copy of that rule, check that it rejects what Claude Code rejects, and check that every sequence this tool can build passes it, including for hostile and 4-byte-per-character text.
 - **Speed.** A hook takes about 65 to 80 ms on this machine against about 40 to 55 ms for an empty `node -e 0` (measured again on 2026-10-04), and the hook's output pipe closes at once even while the background worker waits on a server that never answers (that is a test).
 - **Concurrency.** Six hooks of one session started at the same moment send one ping. With the lock removed that test fails, so it does test something.
 - **The plugin and marketplace** pass `claude plugin validate`, run with a throwaway config folder: `.claude-plugin/plugin.json`, and `.` for the marketplace. In its plugin-directory form (a copy of the plugin without `marketplace.json`) the same command also checks `hooks/hooks.json`; it flags a string where `args` should be a list and an unknown event name, and passes this file without a warning.
 - **A real Windows toast** was shown once, by hand, through the real hook and worker. The PowerShell command exited cleanly, Windows reported toasts enabled for the app, and the app's notification history held one entry with the expected title and text. After that, one change (PowerShell is now started by its full system path, see How it works) was checked without a second toast: the resolved path runs, and the exact toast script still parses.
-- **HTTPS.** The tests use plain HTTP on this machine. Once by hand, all four web channels were sent over TLS to a local server with a self-signed certificate (with certificate checking switched off in that one throwaway process, because Node here would not accept the certificate as a trusted one), and with checking left on the same send was rejected, so this tool does not weaken it.
+- **HTTPS.** The tests use plain HTTP on this machine. Once by hand, the ntfy, Slack, Discord and Teams channels were sent over TLS to a local server with a self-signed certificate (with certificate checking switched off in that one throwaway process, because Node here would not accept the certificate as a trusted one), and with checking left on the same send was rejected, so this tool does not weaken it.
 
 Not verified:
 
 - That any terminal shows the notification. The sequences are checked against Claude Code's rules and as bytes, not in iTerm2, WezTerm, kitty, Ghostty, foot or Windows Terminal.
 - The macOS and Linux desktop commands were built and tested as command lines but never run: there is no Mac or Linux machine here. The macOS one reads its text through `system attribute`; I have not confirmed that it keeps non-ASCII text intact.
-- The real services. Nothing was sent to ntfy.sh, Slack, Discord or Teams. The Teams card uses the Adaptive Card message format that Workflows webhooks take; I had no network access to check it against Microsoft's current documentation, and it was not posted to a tenant. The RFC 2047 encoding used for a non-ASCII ntfy title was not tried against a live ntfy server. The set-up steps for Slack, Discord, Teams and ntfy describe those products as I know them; their screens change, so check each service's own documentation.
+- The real services. Nothing was sent to ntfy.sh, Pushover, Slack, Discord or Teams. The Teams card uses the Adaptive Card message format that Workflows webhooks take; I had no network access to check it against Microsoft's current documentation, and it was not posted to a tenant. The RFC 2047 encoding used for a non-ASCII ntfy title was not tried against a live ntfy server. The set-up steps for Slack, Discord, Teams and ntfy describe those products as I know them; their screens change, so check each service's own documentation.
 - A live Claude Code session. The hooks were run as separate processes with the JSON Claude Code documents, not inside a running Claude Code, so that Claude Code accepts the hook entries written to `settings.json` is read from its code and from `claude plugin validate`, not seen.
 - Last reply: tested on synthetic transcripts in the format Claude Code writes, not on a real one.
 - Nothing more for CI: it runs every test on Windows, macOS and Linux with Node 20, 22 and 24, and on Linux with Node 18, all green, including the file-mode test that Windows skips. The [toolkit's end-to-end test](https://github.com/nrzz/claude-code-toolkit#tested-together) also installs it from GitHub on all three systems and runs its hooks, and the plugin installs from GitHub with `/plugin marketplace add nrzz/claude-code-notify`.

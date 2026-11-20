@@ -18,6 +18,7 @@ test("the defaults", () => {
     enabled: true, title: "Claude Code", minTurnSeconds: 30, notifyAutomated: false, quiet: "", rateLimitSeconds: 20,
     includeLastMessage: false, includeLastMessageRemote: false, terminal: "osc9", desktop: false,
     ntfy: { topic: "", url: "https://ntfy.sh", token: "", priority: "" },
+    pushover: { token: "", user: "", url: "https://api.pushover.net/1/messages.json" },
     slack: { url: "" }, discord: { url: "" }, teams: { url: "", format: "card" }, command: [], types: {}, mutedProjects: [], name: "",
   });
   assert.deepEqual(normalizeConfig(null), normalizeConfig({}));
@@ -30,6 +31,7 @@ test("normalizeConfig keeps good values", () => {
     enabled: false, title: "Bot", minTurnSeconds: 90, notifyAutomated: true, quiet: "22:00-08:00", rateLimitSeconds: 0,
     includeLastMessage: true, includeLastMessageRemote: true, terminal: "osc777", desktop: true,
     ntfy: { topic: "my-topic", url: "https://ntfy.example.com", token: "tk_x", priority: "high" },
+    pushover: { token: "app-token", user: "user-key" },
     slack: { url: SLACK_URL }, teams: { url: SLACK_URL, format: "text" }, command: ["node", "x.js"], types: { agent_completed: true, auth_success: false },
     mutedProjects: ["/a/b"],
   });
@@ -40,6 +42,7 @@ test("normalizeConfig keeps good values", () => {
   assert.equal(c.rateLimitSeconds, 0);
   assert.equal(c.terminal, "osc777");
   assert.equal(c.ntfy.priority, "high");
+  assert.deepEqual(c.pushover, { token: "app-token", user: "user-key", url: "https://api.pushover.net/1/messages.json" });
   assert.equal(c.teams.format, "text");
   assert.deepEqual(c.command, ["node", "x.js"]);
   assert.deepEqual(c.types, { agent_completed: true, auth_success: false });
@@ -61,6 +64,7 @@ test("normalizeConfig replaces bad values with defaults, so a typo cannot break 
   assert.equal(c.desktop, false);
   assert.deepEqual(c.ntfy, { topic: "", url: "https://ntfy.sh", token: "", priority: "" });
   assert.equal(c.slack.url, "");
+  assert.deepEqual(c.pushover, { token: "", user: "", url: "https://api.pushover.net/1/messages.json" });
   assert.equal(c.discord.url, "", "a webhook over plain http to another host is refused");
   assert.equal(c.teams.format, "card");
   assert.deepEqual(c.command, []);
@@ -300,6 +304,22 @@ test("set ntfy.topic auto makes a long random topic that is valid, and different
   assert.equal(a.shown, a.data.ntfy.topic, "a generated topic is shown in full, once: it has to be typed into the phone app");
   assert.match(a.note, /Subscribe to this exact name/);
   assert.equal(set({}, "ntfy.topic", "my-own-secret-topic").note, undefined, "a topic you typed yourself is shown masked and has no note");
+});
+
+test("set Pushover credentials as masked user-only secrets and allow a local test endpoint", () => {
+  const token = set({}, "pushover.token", "app-token-secret");
+  const user = set(token.data, "pushover.user", "user-key-secret");
+  assert.equal(token.ok, true);
+  assert.equal(user.ok, true);
+  assert.deepEqual(user.data, { pushover: { token: "app-token-secret", user: "user-key-secret" } });
+  assert.ok(!token.shown.includes("app-token-secret"));
+  assert.ok(!user.shown.includes("user-key-secret"));
+  assert.equal(set({}, "pushover.token", "has space").ok, false);
+  assert.equal(set({}, "pushover.user", "has space").ok, false);
+  const endpoint = set({}, "pushover.url", "http://127.0.0.1:1234/messages.json");
+  assert.equal(endpoint.ok, true);
+  assert.equal(endpoint.shown, "http://127.0.0.1:1234/…on", "the host remains visible while the endpoint path is masked like other URLs");
+  assert.equal(set({}, "pushover.url", "ftp://example.test").ok, false);
 });
 
 test("set: webhook URLs must be https (or this machine) and are never echoed whole", () => {

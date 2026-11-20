@@ -65,6 +65,36 @@ test("ntfy: a non-ASCII title is sent as a valid header, and the UTF-8 body arri
   }
 });
 
+test("pushover: POSTs a form-encoded message to the configured endpoint", async () => {
+  const srv = await captureServer();
+  try {
+    const cfg = normalizeConfig({ pushover: { token: "app-token", user: "user-key", url: srv.url + "/1/messages.json" } });
+    const r = await deliver("pushover", { cfg, payload: payload({ kind: "attention" }) });
+    assert.deepEqual(r, { channel: "pushover", ok: true, detail: "HTTP 200" });
+    const hit = srv.hits[0];
+    assert.equal(hit.method, "POST");
+    assert.equal(hit.url, "/1/messages.json");
+    assert.equal(hit.headers["content-type"], "application/x-www-form-urlencoded");
+    assert.deepEqual(Object.fromEntries(new URLSearchParams(hit.body)), {
+      token: "app-token", user: "user-key", title: "Claude Code",
+      message: "Finished in api after 2m 13s", priority: "1",
+    });
+  } finally { await srv.close(); }
+});
+
+test("pushover: requires both credentials and redacts them from error responses", async () => {
+  const missing = await deliver("pushover", { cfg: normalizeConfig({}), payload: payload() });
+  assert.deepEqual(missing, { channel: "pushover", ok: false, detail: "pushover.token and pushover.user are required" });
+  const srv = await captureServer(() => ({ status: 400, body: "bad app-token-secret user-key-secret" }));
+  try {
+    const cfg = normalizeConfig({ pushover: { token: "app-token-secret", user: "user-key-secret", url: srv.url } });
+    const r = await deliver("pushover", { cfg, payload: payload() });
+    assert.equal(r.ok, false);
+    assert.ok(!r.detail.includes("app-token-secret"));
+    assert.ok(!r.detail.includes("user-key-secret"));
+  } finally { await srv.close(); }
+});
+
 test("slack: POST of {text} as JSON", async () => {
   const srv = await captureServer();
   try {
@@ -143,11 +173,12 @@ test("sendAll sends through every web channel at once and ignores the terminal c
   try {
     const cfg = normalizeConfig({
       ntfy: { topic: "t", url: srv.url },
+      pushover: { token: "app-token", user: "user-key", url: `${srv.url}/pushover` },
       slack: { url: `${srv.url}/slack` }, discord: { url: `${srv.url}/discord` }, teams: { url: `${srv.url}/teams` },
     });
-    const results = await sendAll(payload({ channels: ["terminal", "ntfy", "slack", "discord", "teams"] }), cfg, { timeoutMs: 3000 });
-    assert.deepEqual(results.map((r) => [r.channel, r.ok]), [["ntfy", true], ["slack", true], ["discord", true], ["teams", true]]);
-    assert.deepEqual(srv.hits.map((h) => h.url).sort(), ["/discord", "/slack", "/t", "/teams"]);
+    const results = await sendAll(payload({ channels: ["terminal", "ntfy", "pushover", "slack", "discord", "teams"] }), cfg, { timeoutMs: 3000 });
+    assert.deepEqual(results.map((r) => [r.channel, r.ok]), [["ntfy", true], ["pushover", true], ["slack", true], ["discord", true], ["teams", true]]);
+    assert.deepEqual(srv.hits.map((h) => h.url).sort(), ["/discord", "/pushover", "/slack", "/t", "/teams"]);
   } finally {
     await srv.close();
   }
@@ -220,7 +251,7 @@ test("a service that never answers is cut off at the timeout", async () => {
 
 test("a channel that is not configured fails with a plain reason instead of throwing", async () => {
   const cfg = normalizeConfig({});
-  for (const [channel, why] of [["ntfy", "ntfy.topic is not set"], ["slack", "slack.url is not set"], ["discord", "discord.url is not set"], ["teams", "teams.url is not set"], ["command", "no command is set"], ["pager", "unknown channel"]]) {
+  for (const [channel, why] of [["ntfy", "ntfy.topic is not set"], ["pushover", "pushover.token and pushover.user are required"], ["slack", "slack.url is not set"], ["discord", "discord.url is not set"], ["teams", "teams.url is not set"], ["command", "no command is set"], ["pager", "unknown channel"]]) {
     assert.deepEqual(await deliver(channel, { cfg, payload: payload() }), { channel, ok: false, detail: why });
   }
 });

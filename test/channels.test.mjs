@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   LINUX_SCRIPT, MAC_SCRIPT, TOAST_SCRIPT, WINDOWS_APP_ID, commandSpec, desktopCommand, discordRequest, headerValue,
-  ntfyRequest, redactor, slackEscape, slackRequest, teamsRequest, windowsPowerShell,
+  ntfyRequest, pushoverRequest, redactor, slackEscape, slackRequest, teamsRequest, windowsPowerShell,
 } from "../src/channels.mjs";
 import { normalizeConfig } from "../src/config.mjs";
 import { chars } from "./helpers.mjs";
@@ -61,6 +61,52 @@ test("headerValue: ASCII passes, other text becomes an RFC 2047 word, and a line
   assert.ok(!/[\r\n]/.test(injected));
   const r = ntfyRequest(cfg({ ntfy: { topic: "t" } }), msg({ title: "x\r\nX-Evil: yes" }), "finished");
   assert.ok(!/[\r\n]/.test(r.headers.Title));
+});
+
+// --- Pushover --------------------------------------------------------------------------------------
+
+test("pushover: form-encoded API request includes credentials, title, message and event priority", () => {
+  const config = cfg({ pushover: { token: "app-token-123", user: "user-key-456" } });
+  const request = pushoverRequest(config, msg({ detail: "Last line" }), "attention");
+  assert.equal(request.url, "https://api.pushover.net/1/messages.json");
+  assert.equal(request.headers["Content-Type"], "application/x-www-form-urlencoded");
+  assert.deepEqual(Object.fromEntries(new URLSearchParams(request.body)), {
+    token: "app-token-123", user: "user-key-456", title: "Claude Code",
+    message: "Finished in api after 2m 13s\nLast line", priority: "1",
+  });
+});
+
+test("pushover: preserves message line breaks while cleaning each line", () => {
+  const request = pushoverRequest(
+    cfg({ pushover: { token: "app-token", user: "user-key" } }),
+    msg({ body: "  Finished   in api  ", detail: "  Last   line\n\n  Another\tline  " }),
+    "finished",
+  );
+  const form = new URLSearchParams(request.body);
+  assert.equal(form.get("message"), "Finished in api\nLast line\nAnother line");
+});
+
+test("pushover: title and message respect the API character limits", () => {
+  const request = pushoverRequest(
+    cfg({ pushover: { token: "app-token", user: "user-key" } }),
+    msg({ title: "T".repeat(300), body: "M".repeat(1200) }),
+    "finished",
+  );
+  const form = new URLSearchParams(request.body);
+  assert.equal(Array.from(form.get("title")).length, 250);
+  assert.equal(form.get("title").endsWith("…"), true);
+  assert.equal(Array.from(form.get("message")).length, 1024);
+  assert.equal(form.get("message").endsWith("…"), true);
+});
+
+test("pushover: finished notifications use normal priority and form encoding preserves special characters", () => {
+  const request = pushoverRequest(cfg({ pushover: { token: "a&b", user: "u + x" } }), msg({ title: "Claude & Code", body: "café ✓" }), "finished");
+  const form = new URLSearchParams(request.body);
+  assert.equal(form.get("token"), "a&b");
+  assert.equal(form.get("user"), "u + x");
+  assert.equal(form.get("title"), "Claude & Code");
+  assert.equal(form.get("message"), "café ✓");
+  assert.equal(form.get("priority"), "0");
 });
 
 // --- Slack -----------------------------------------------------------------------------------------
@@ -232,11 +278,11 @@ test("command: the text is never part of the argument list", () => {
 // --- redaction -------------------------------------------------------------------------------------
 
 test("redactor removes every configured secret from a message", () => {
-  const config = cfg({ ntfy: { topic: "my-secret-topic", token: "tk_supersecret" }, slack: { url: SLACK_URL }, discord: { url: DISCORD_URL }, teams: { url: TEAMS_URL } });
+  const config = cfg({ ntfy: { topic: "my-secret-topic", token: "tk_supersecret" }, pushover: { token: "push-token-secret", user: "push-user-secret" }, slack: { url: SLACK_URL }, discord: { url: DISCORD_URL }, teams: { url: TEAMS_URL } });
   const redact = redactor(config);
-  const text = `failed: ${SLACK_URL} then ${DISCORD_URL} and ${TEAMS_URL}, topic my-secret-topic token tk_supersecret, path ${new URL(SLACK_URL).pathname}`;
+  const text = `failed: ${SLACK_URL} then ${DISCORD_URL} and ${TEAMS_URL}, topic my-secret-topic token tk_supersecret, Pushover push-token-secret push-user-secret, path ${new URL(SLACK_URL).pathname}`;
   const out = redact(text);
-  for (const secret of [SLACK_URL, DISCORD_URL, TEAMS_URL, "my-secret-topic", "tk_supersecret", new URL(SLACK_URL).pathname, "T0FAKE000"]) {
+  for (const secret of [SLACK_URL, DISCORD_URL, TEAMS_URL, "my-secret-topic", "tk_supersecret", "push-token-secret", "push-user-secret", new URL(SLACK_URL).pathname, "T0FAKE000"]) {
     assert.ok(!out.includes(secret), secret);
   }
   assert.ok(out.includes("***"));

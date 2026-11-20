@@ -51,6 +51,7 @@ Settings (stored in <config folder>/notify.json; add --project for the few that 
   claude-notify set terminal osc9|osc777|title|bell|off
   claude-notify set desktop on|off
   claude-notify set ntfy.topic <topic|auto>      also: ntfy.url, ntfy.token, ntfy.priority
+  claude-notify set pushover.token <app-token>    also: pushover.user, pushover.url
   claude-notify set slack.url <url>              also: discord.url, teams.url, teams.format card|text
   claude-notify set command <program> [args...]  your own command (use -- before args that start with -)
   claude-notify set minTurnSeconds <n>           quiet <HH:MM-HH:MM|off>    notifyAutomated on|off
@@ -135,6 +136,7 @@ async function cmdTest(args, { cwd, env, io }) {
     if (!CHANNELS.includes(name)) { io.error(`Unknown channel "${wanted}". Channels: ${CHANNELS.join(", ")}`); return 1; }
     const missing = {
       ntfy: !cfg.ntfy.topic && "ntfy has no topic: claude-notify set ntfy.topic auto",
+      pushover: (!cfg.pushover.token || !cfg.pushover.user) && "pushover needs both credentials: claude-notify set pushover.token <app-token> and claude-notify set pushover.user <user-key>",
       slack: !cfg.slack.url && "slack has no URL: claude-notify set slack.url <webhook url>",
       discord: !cfg.discord.url && "discord has no URL: claude-notify set discord.url <webhook url>",
       teams: !cfg.teams.url && "teams has no URL: claude-notify set teams.url <webhook url>",
@@ -192,6 +194,9 @@ function describeChannels(cfg) {
   rows.push(["ntfy", cfg.ntfy.topic
     ? `on: topic ${maskSecret(cfg.ntfy.topic)} at ${cfg.ntfy.url}${cfg.ntfy.token ? `, token ${maskSecret(cfg.ntfy.token)}` : ""}${cfg.ntfy.priority ? `, priority ${cfg.ntfy.priority}` : ""}`
     : "off (claude-notify set ntfy.topic auto)"]);
+  rows.push(["pushover", cfg.pushover.token && cfg.pushover.user
+    ? `on: user ${maskSecret(cfg.pushover.user)}, token ${maskSecret(cfg.pushover.token)}`
+    : "off (set pushover.token and pushover.user)"]);
   rows.push(["slack", cfg.slack.url ? `on: ${maskUrl(cfg.slack.url)}` : "off"]);
   rows.push(["discord", cfg.discord.url ? `on: ${maskUrl(cfg.discord.url)}` : "off"]);
   rows.push(["teams", cfg.teams.url ? `on: ${maskUrl(cfg.teams.url)} (${cfg.teams.format})` : "off"]);

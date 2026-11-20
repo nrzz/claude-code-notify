@@ -230,8 +230,8 @@ test("README token table says 0, and its install section has both routes", () =>
 test("README has a subsection for every channel, each with set-up steps", () => {
   const channels = README.slice(README.indexOf("## Channels"), README.indexOf("## Settings"));
   const subs = [...channels.matchAll(/^### (.+)$/gm)].map((m) => m[1]);
-  assert.deepEqual(subs, ["Terminal (on by default)", "Desktop", "Phone: ntfy", "Slack", "Discord", "Microsoft Teams", "Your own command"]);
-  for (const cmd of ["set terminal", "set desktop on", "set ntfy.topic", "set slack.url", "set discord.url", "set teams.url", "set command"]) assert.ok(channels.includes(cmd), cmd);
+  assert.deepEqual(subs, ["Terminal (on by default)", "Desktop", "Phone: ntfy", "Phone: Pushover", "Slack", "Discord", "Microsoft Teams", "Your own command"]);
+  for (const cmd of ["set terminal", "set desktop on", "set ntfy.topic", "set pushover.token", "set pushover.user", "set slack.url", "set discord.url", "set teams.url", "set command"]) assert.ok(channels.includes(cmd), cmd);
 });
 
 test("README documents every setting the command line accepts", () => {

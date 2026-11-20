@@ -37,6 +37,19 @@ export function ntfyRequest(cfg, msg, kind) {
   return { url: `${base}/${encodeURIComponent(cfg.ntfy.topic)}`, headers, body: block(msg) };
 }
 
+/** Pushover accepts a form-encoded message at its API endpoint. Priority 1 marks attention pings. */
+export function pushoverRequest(cfg, msg, kind) {
+  const form = new URLSearchParams({
+    token: cfg.pushover.token, user: cfg.pushover.user, title: cleanText(msg.title, 250),
+    message: (() => {
+      const lines = block(msg).split("\n").map((line) => cleanText(line)).filter(Boolean);
+      const codePoints = Array.from(lines.join("\n"));
+      return codePoints.length > 1024 ? codePoints.slice(0, 1023).join("").trimEnd() + "…" : codePoints.join("");
+    })(), priority: kind === "attention" ? "1" : "0",
+  });
+  return { url: cfg.pushover.url, headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form.toString() };
+}
+
 /** Slack's mrkdwn treats & < > as markup (<!channel> pings everyone), so they are escaped. */
 export const slackEscape = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -222,9 +235,9 @@ export function runSpec({ cmd, args, env }, timeoutMs = DEFAULT_TIMEOUT_MS) {
 
 /** Replace every configured secret (URLs, token, topic) in a message, so an error can never leak one. */
 export function redactor(cfg) {
-  const secrets = [cfg.ntfy.token, cfg.ntfy.topic, cfg.slack.url, cfg.discord.url, cfg.teams.url]
+  const secrets = [cfg.ntfy.token, cfg.ntfy.topic, cfg.pushover.token, cfg.pushover.user, cfg.pushover.url, cfg.slack.url, cfg.discord.url, cfg.teams.url]
     .filter((s) => typeof s === "string" && s.length >= 6);
-  for (const url of [cfg.slack.url, cfg.discord.url, cfg.teams.url]) {
+  for (const url of [cfg.pushover.url, cfg.slack.url, cfg.discord.url, cfg.teams.url]) {
     try { const u = new URL(url); if (u.pathname.length >= 6) secrets.push(u.pathname); } catch { /* not a URL */ }
   }
   return (text) => {
@@ -265,6 +278,10 @@ export async function deliver(channel, { cfg, payload, timeoutMs = DEFAULT_TIMEO
       case "ntfy":
         if (!cfg.ntfy.topic) return { channel, ok: false, detail: "ntfy.topic is not set" };
         result = await post(ntfyRequest(cfg, payload.remote, payload.kind), timeoutMs);
+        break;
+      case "pushover":
+        if (!cfg.pushover.token || !cfg.pushover.user) return { channel, ok: false, detail: "pushover.token and pushover.user are required" };
+        result = await post(pushoverRequest(cfg, payload.remote, payload.kind), timeoutMs);
         break;
       case "slack":
         if (!cfg.slack.url) return { channel, ok: false, detail: "slack.url is not set" };

@@ -409,7 +409,7 @@ test("test exits 1 and shows the reason when a channel fails, without leaking th
 
 test("test --channel for a channel that is not set up says how to set it up", async () => {
   await withBox((box) => {
-    const cases = [["ntfy", /claude-notify set ntfy\.topic/], ["slack", /set slack\.url/], ["discord", /set discord\.url/], ["teams", /set teams\.url/], ["command", /set command/]];
+    const cases = [["ntfy", /claude-notify set ntfy\.topic/], ["pushover", /set pushover\.token/], ["slack", /set slack\.url/], ["discord", /set discord\.url/], ["teams", /set teams\.url/], ["command", /set command/]];
     for (const [channel, pattern] of cases) {
       const r = box.cli(["test", "--channel", channel]);
       assert.equal(r.status, 1, channel);
@@ -417,7 +417,7 @@ test("test --channel for a channel that is not set up says how to set it up", as
     }
     const unknown = box.cli(["test", "--channel", "pager"]);
     assert.equal(unknown.status, 1);
-    assert.match(unknown.stderr, /Unknown channel "pager"\. Channels: terminal, desktop, ntfy, slack, discord, teams, command/);
+    assert.match(unknown.stderr, /Unknown channel "pager"\. Channels: terminal, desktop, ntfy, pushover, slack, discord, teams, command/);
   });
 });
 

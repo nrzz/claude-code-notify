@@ -101,6 +101,7 @@ function argv(v) {
 export function normalizeConfig(raw) {
   const r = isObj(raw) ? raw : {};
   const ntfy = isObj(r.ntfy) ? r.ntfy : {};
+  const pushover = isObj(r.pushover) ? r.pushover : {};
   const slack = isObj(r.slack) ? r.slack : {};
   const discord = isObj(r.discord) ? r.discord : {};
   const teams = isObj(r.teams) ? r.teams : {};
@@ -124,6 +125,10 @@ export function normalizeConfig(raw) {
       url: typeof ntfy.url === "string" && validUrl(ntfy.url.trim(), { allowHttp: true }) ? ntfy.url.trim() : "https://ntfy.sh",
       token: text(ntfy.token),
       priority: validPriority(ntfy.priority),
+    },
+    pushover: {
+      token: text(pushover.token), user: text(pushover.user),
+      url: typeof pushover.url === "string" && validUrl(pushover.url.trim(), { allowHttp: true }) ? pushover.url.trim() : "https://api.pushover.net/1/messages.json",
     },
     slack: { url: hook(slack) },
     discord: { url: hook(discord) },
@@ -160,6 +165,7 @@ export function configProblems(raw) {
   };
   for (const k of ["slack", "discord", "teams"]) url(`${k}.url`, isObj(r[k]) ? r[k].url : undefined);
   url("ntfy.url", isObj(r.ntfy) ? r.ntfy.url : undefined, { allowHttp: true });
+  url("pushover.url", isObj(r.pushover) ? r.pushover.url : undefined, { allowHttp: true });
   if (isObj(r.ntfy) && r.ntfy.topic && !validTopic(text(r.ntfy.topic))) out.push("ntfy.topic must be 1 to 64 letters, digits, - or _, so ntfy is off");
   if (r.terminal !== undefined && !TERMINAL_MODES.includes(String(r.terminal).toLowerCase())) out.push(`terminal "${r.terminal}" is not one of ${TERMINAL_MODES.join(", ")}; using osc9`);
   if (r.quiet && !parseQuiet(r.quiet)) out.push(`quiet "${r.quiet}" is not HH:MM-HH:MM, so quiet hours are off`);
@@ -265,14 +271,14 @@ export function maskUrl(value) {
 
 const BOOL_KEYS = ["enabled", "notifyAutomated", "desktop", "includeLastMessage", "includeLastMessageRemote"];
 const ENUM_KEYS = { terminal: TERMINAL_MODES, "teams.format": TEAMS_FORMATS };
-const URL_KEYS = { "slack.url": {}, "discord.url": {}, "teams.url": {}, "ntfy.url": { allowHttp: true } };
+const URL_KEYS = { "slack.url": {}, "discord.url": {}, "teams.url": {}, "ntfy.url": { allowHttp: true }, "pushover.url": { allowHttp: true } };
 const NUMBER_KEYS = { minTurnSeconds: [0, 86400], rateLimitSeconds: [0, 3600] };
 export const SETTING_KEYS = [
   ...BOOL_KEYS, ...Object.keys(NUMBER_KEYS), "quiet", "terminal", "title",
-  "ntfy.topic", "ntfy.url", "ntfy.token", "ntfy.priority", "slack.url", "discord.url", "teams.url", "teams.format",
+  "ntfy.topic", "ntfy.url", "ntfy.token", "ntfy.priority", "pushover.token", "pushover.user", "pushover.url", "slack.url", "discord.url", "teams.url", "teams.format",
   "command", "types.<name>",
 ];
-const SECRET_KEYS = new Set(["ntfy.topic", "ntfy.token", "slack.url", "discord.url", "teams.url"]);
+const SECRET_KEYS = new Set(["ntfy.topic", "ntfy.token", "pushover.token", "pushover.user", "pushover.url", "slack.url", "discord.url", "teams.url"]);
 
 const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -384,6 +390,13 @@ export function applySetting(raw, key, args, { project = false } = {}) {
     case "ntfy.token": {
       if (isClear) return clear();
       if (/\s/.test(value)) return bad('"ntfy.token" has no spaces.');
+      setIn(data, key, value);
+      return done(maskSecret(value));
+    }
+    case "pushover.token":
+    case "pushover.user": {
+      if (isClear) return clear();
+      if (/\s/.test(value)) return bad(`"${key}" has no spaces.`);
       setIn(data, key, value);
       return done(maskSecret(value));
     }
